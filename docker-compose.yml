@@ -1,0 +1,22 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "${BACKEND_PORT:-8001}:8000"
+    volumes:
+      - ./ortho:/app/ortho
+      - ./dem:/app/dem
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "${FRONTEND_PORT:-7006}:7000"
+    environment:
+      - VITE_BACKEND_URL=http://localhost:${BACKEND_PORT:-8001}
+    depends_on:
+      - backend
