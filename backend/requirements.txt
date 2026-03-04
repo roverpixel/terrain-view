@@ -1,0 +1,7 @@
+fastapi>=0.100.0
+uvicorn>=0.22.0
+titiler.core>=0.15.0
+titiler.application>=0.15.0
+rasterio>=1.3.0
+rio-cogeo>=5.0.0
+numpy>=1.24.0
