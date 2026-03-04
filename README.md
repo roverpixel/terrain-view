@@ -1,2 +1,59 @@
-# terrain-view
-Simplistic web viewer for orthos and DEMs
+# Terrain-View
+
+A simplistic web-based 3D DEM & Orthoimage Viewer that visualizes Cloud Optimized GeoTIFFs (COGs). The backend provides tile encoding via TiTiler (FastAPI), while the frontend renders the terrain using deck.gl in the browser.
+
+## Running with Docker Compose
+
+This project is fully containerized using Docker Compose. Both the frontend and backend are run as separate Docker containers.
+
+### Prerequisites
+
+- Docker
+- Docker Compose
+
+### Getting Started
+
+1. **Prepare Data Directories**
+   The backend expects to read COG files from the `ortho/` and `dem/` directories mapped from the host to the container. Create these directories in the project root:
+
+   ```bash
+   mkdir -p ortho dem
+   ```
+
+2. **Populate Data (Optional, for testing)**
+   If you don't have your own `.tif` files, you can generate some mock data using the included script (requires Python and dependencies locally, or run inside the container):
+
+   ```bash
+   # From the project root, this generates mock_ortho.tif and mock_dem.tif
+   python backend/generate_mock_data.py
+
+   # Move the generated files into the respective directories
+   mv mock_ortho.tif ortho/
+   mv mock_dem.tif dem/
+   ```
+
+3. **Start the Application**
+   Run the following command to build the images and start the containers:
+
+   ```bash
+   docker compose up --build
+   ```
+
+4. **Access the Application**
+   - The **frontend** is available at: `http://localhost:7006`
+   - The **backend** API (TiTiler) is available at: `http://localhost:8001`
+
+### Configuration
+
+The exposed ports can be configured by providing a `.env` file or exporting environment variables before running Docker Compose:
+
+```bash
+# Example
+export BACKEND_PORT=8080
+export FRONTEND_PORT=3000
+docker compose up
+```
+
+By default:
+- **Backend Host Port:** 8001 (Internal container port: 8000)
+- **Frontend Host Port:** 7006 (Internal container port: 7000)
