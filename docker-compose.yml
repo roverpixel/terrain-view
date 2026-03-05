@@ -5,8 +5,7 @@ services:
     ports:
       - "${BACKEND_PORT:-8001}:8000"
     volumes:
-      - ${DEM_DATA_PATH}:/app/ortho
-      - ${DEM_DATA_PATH}:/app/dem
+      - ${DEM_DATA_PATH}:/app/data
     environment:
       - HOST=0.0.0.0
       - PORT=8000

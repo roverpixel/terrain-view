@@ -8,3 +8,4 @@ backend/.venv/
 data/
 *.png
 *.tif
+venv/
