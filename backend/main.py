@@ -24,17 +24,23 @@ cog = TilerFactory(
 )
 
 def elevation_to_rgb(img: ImageData) -> ImageData:
-    """Encode elevation data into RGB terrain."""
-    elevation = img.array[0] # Note: older rio-tiler uses .data, newer uses .array
-    # wait, earlier when checking logs, `img.data[0]` worked, but `ImageData(data=new_data)` failed.
-    # Looking at the traceback: `TypeError: ImageData.__init__() got an unexpected keyword argument 'data'`
-    # Ah! `ImageData(array=new_data)` is the correct signature in rio-tiler >= 3.0.0.
-    v = (elevation.astype("float32") + 10000) * 10
-    v = np.clip(v, 0, 16777215) # max for 24-bit RGB
-    r = (v // 65536).astype("uint8")
-    g = ((v % 65536) // 256).astype("uint8")
-    b = (v % 256).astype("uint8")
-    new_data = np.stack([r, g, b])
+    """Encode elevation data into standard Mapbox Terrain-RGB."""
+    # Convert to float64 to prevent overflow during initial math
+    elevation = img.array[0].astype("float64")
+
+    # Mapbox Formula: v = (alt + offset) * precision
+    v = (elevation + 10000) * 10
+
+    # Clip to 24-bit range and convert to uint32 for bit shifting
+    v = np.clip(v, 0, 16777215).astype("uint32")
+
+    # Bitwise shift is more robust than modulo for byte packing
+    r = (v >> 16) & 255
+    g = (v >> 8) & 255
+    b = v & 255
+
+    # Stack into (3, H, W) and ensure uint8 type
+    new_data = np.stack([r, g, b]).astype("uint8")
 
     return ImageData(
         new_data,
