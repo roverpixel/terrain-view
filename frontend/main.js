@@ -7,10 +7,10 @@ const DEM_URL = '/app/data/dem.tif';
 const ORTHO_URL = '/app/data/ortho.tif';
 
 const elevationDecoder = {
-  rScaler: 25.6,
-  gScaler: 0.1,
-  bScaler: 0.00390625,
-  offset: -10000
+  rScaler: 6553.6,   // Logic: (256 * 256) / 10
+  gScaler: 25.6,     // Logic: 256 / 10
+  bScaler: 0.1,      // Logic: 1 / 10
+  offset: -10000     // Matches the backend +10000 offset
 };
 
 let exaggeration = 1.0;
