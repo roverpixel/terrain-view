@@ -14,22 +14,23 @@ This project is fully containerized using Docker Compose. Both the frontend and 
 ### Getting Started
 
 1. **Prepare Data Directories**
-   The backend expects to read COG files from the `ortho/` and `dem/` directories mapped from the host to the container. Create these directories in the project root:
+   The backend expects to read COG files from a `data/` directory mapped from the host to the container. Create this directory:
 
    ```bash
-   mkdir -p ortho dem
+   mkdir -p data
    ```
 
 2. **Populate Data (Optional, for testing)**
-   If you don't have your own `.tif` files, you can generate some mock data using the included script (requires Python and dependencies locally, or run inside the container):
+   If you don't have your own `.tif` files, you can generate some mock data using the included script (requires Python and dependencies locally):
 
    ```bash
-   # From the project root, this generates mock_ortho.tif and mock_dem.tif
-   python backend/generate_mock_data.py
+   # From the project root, this generates testing/data/ortho.tif and testing/data/dem.tif
+   cd testing
+   python generate_mock_data.py
+   cd ..
 
-   # Move the generated files into the respective directories
-   mv mock_ortho.tif ortho/
-   mv mock_dem.tif dem/
+   # Or move the generated files into your primary data directory
+   cp testing/data/*.tif data/
    ```
 
 3. **Start the Application**
