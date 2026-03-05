@@ -27,7 +27,7 @@ When writing or modifying code for this project, please adhere to the following 
 * **Framework:** JavaScript using the `deck.gl` library.
 * **Terrain Rendering:** Use the `TerrainLayer` in deck.gl.
 * **Data Sources:** Point the `TerrainLayer`'s `elevationData` to the TiTiler Terrain-RGB endpoint, and the `texture` to the TiTiler orthoimage endpoint.
-* **Camera:** Implement an orbit-style camera (locked Z-axis/horizon) similar to a standard GIS turntable view. Do not use a free-floating trackball.
+* **Camera:** Use `MapView` and `MapController` (which defaults to a GIS turntable view: drag to pan, shift-drag to rotate/pitch). Set the default view to center on the map at an oblique 45-degree pitch. Do not use `OrbitView` or a free-floating trackball for geographic data.
 * **UI Controls:** Include a UI slider to dynamically adjust the Z-axis exaggeration (elevation scaling) of the terrain.
 
 ### 3. Data Processing (GDAL)
