@@ -59,6 +59,6 @@ def create_dem_and_ortho(width, height, bounds, dem_path, ortho_path):
     os.remove(temp_ortho)
 
 if __name__ == "__main__":
-    os.makedirs("../data", exist_ok=True)
+    os.makedirs("data", exist_ok=True)
     bounds = (-122.5, 37.7, -122.3, 37.8)
-    create_dem_and_ortho(1024, 1024, bounds, "../data/mock_dem.tif", "../data/mock_ortho.tif")
+    create_dem_and_ortho(1024, 1024, bounds, "data/dem.tif", "data/ortho.tif")

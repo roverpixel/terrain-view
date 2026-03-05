@@ -2,9 +2,9 @@ import { Deck } from '@deck.gl/core';
 import { TerrainLayer } from '@deck.gl/geo-layers';
 
 // Use absolute paths for the data files to avoid any relative path resolution issues in backend
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8001';
-const DEM_URL = '/app/dem/dem.tif';
-const ORTHO_URL = '/app/ortho/ortho.tif';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://serverhost:8000';
+const DEM_URL = '/app/data/dem.tif';
+const ORTHO_URL = '/app/data/ortho.tif';
 
 const elevationDecoder = {
   rScaler: 25.6,
