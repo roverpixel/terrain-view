@@ -5,6 +5,9 @@ from titiler.core.errors import DEFAULT_STATUS_CODES, add_exception_handlers
 from rio_tiler.models import ImageData
 import numpy as np
 
+import os
+os.environ["PROJ_IGNORE_CELESTIAL_BODY"] = "YES"
+
 app = FastAPI(title="Terrain-View Backend")
 
 # Ensure middleware handles CORS.
