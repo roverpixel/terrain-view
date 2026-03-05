@@ -13,41 +13,74 @@ const elevationDecoder = {
   offset: -10000
 };
 
-const INITIAL_VIEW_STATE = {
-  latitude: 37.75,
-  longitude: -122.4,
-  zoom: 11,
-  bearing: 0,
-  pitch: 45,
-  maxZoom: 16,
-  minZoom: 1
-};
-
 let exaggeration = 1.0;
+let deck;
+let dynamicBounds = null;
 
-// The endpoint format for TiTiler WebMercatorQuad tiles is `/tiles/WebMercatorQuad/{z}/{x}/{y}@1x`
-// Let's use the standard `{z}/{x}/{y}` endpoint for simplicity if it works, or fallback to WebMercatorQuad.
-// Actually standard TiTiler default for `tiles` is `/tiles/{z}/{x}/{y}` or `/tiles/WebMercatorQuad/{z}/{x}/{y}`
-// Let's use `/tiles/WebMercatorQuad/{z}/{x}/{y}@1x` as that's what was in TileJSON.
+async function initViewer() {
+  try {
+    // Fetch TileJSON or Info to get the actual bounds and center of the data
+    const response = await fetch(`${BACKEND_URL}/ortho/WebMercatorQuad/tilejson.json?url=${encodeURIComponent(ORTHO_URL)}`);
 
-const deck = new Deck({
-  container: 'app',
-  initialViewState: INITIAL_VIEW_STATE,
-  controller: true,
-  layers: [
-    new TerrainLayer({
-      id: 'terrain-layer',
-      elevationData: `${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url=${encodeURIComponent(DEM_URL)}`,
-      texture: `${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url=${encodeURIComponent(ORTHO_URL)}`,
-      elevationDecoder: elevationDecoder,
-      bounds: [-122.5, 37.7, -122.3, 37.8],
-      wireframe: false,
-      color: [255, 255, 255],
-      elevationMultiplier: exaggeration,
-      transparentColor: [0, 0, 0, 0]
-    })
-  ]
-});
+    if (!response.ok) {
+      throw new Error(`Failed to fetch dataset metadata: ${response.statusText}`);
+    }
+
+    const tileJson = await response.json();
+    dynamicBounds = tileJson.bounds;
+
+    let centerLon = -122.4;
+    let centerLat = 37.75;
+    let centerZoom = 11;
+    let minZoom = 1;
+    let maxZoom = 16;
+
+    if (tileJson.center) {
+      centerLon = tileJson.center[0];
+      centerLat = tileJson.center[1];
+      centerZoom = tileJson.center[2] || 11;
+    } else if (dynamicBounds) {
+      centerLon = (dynamicBounds[0] + dynamicBounds[2]) / 2;
+      centerLat = (dynamicBounds[1] + dynamicBounds[3]) / 2;
+    }
+
+    if (tileJson.minzoom !== undefined) minZoom = tileJson.minzoom;
+    if (tileJson.maxzoom !== undefined) maxZoom = tileJson.maxzoom;
+
+    const initialViewState = {
+      latitude: centerLat,
+      longitude: centerLon,
+      zoom: centerZoom,
+      bearing: 0,
+      pitch: 45,
+      maxZoom: maxZoom,
+      minZoom: minZoom
+    };
+
+    deck = new Deck({
+      container: 'app',
+      initialViewState: initialViewState,
+      controller: true,
+      layers: [
+        new TerrainLayer({
+          id: 'terrain-layer',
+          elevationData: `${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url=${encodeURIComponent(DEM_URL)}`,
+          texture: `${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url=${encodeURIComponent(ORTHO_URL)}`,
+          elevationDecoder: elevationDecoder,
+          bounds: dynamicBounds,
+          wireframe: false,
+          color: [255, 255, 255],
+          elevationMultiplier: exaggeration,
+          transparentColor: [0, 0, 0, 0]
+        })
+      ]
+    });
+
+  } catch (error) {
+    console.error('Error initializing viewer:', error);
+    document.getElementById('app').innerHTML = `<div style="color: white; padding: 20px;">Error loading viewer: ${error.message}</div>`;
+  }
+}
 
 const slider = document.getElementById('exaggeration');
 const valLabel = document.getElementById('exag-val');
@@ -56,19 +89,23 @@ slider.addEventListener('input', (e) => {
   exaggeration = parseFloat(e.target.value);
   valLabel.textContent = exaggeration.toFixed(1);
 
-  const terrainLayer = new TerrainLayer({
-    id: 'terrain-layer',
-    elevationData: `${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url=${encodeURIComponent(DEM_URL)}`,
-    texture: `${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url=${encodeURIComponent(ORTHO_URL)}`,
-    elevationDecoder: elevationDecoder,
-    bounds: [-122.5, 37.7, -122.3, 37.8],
-    wireframe: false,
-    color: [255, 255, 255],
-    elevationMultiplier: exaggeration,
-    transparentColor: [0, 0, 0, 0]
-  });
+  if (deck && dynamicBounds) {
+    const terrainLayer = new TerrainLayer({
+      id: 'terrain-layer',
+      elevationData: `${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url=${encodeURIComponent(DEM_URL)}`,
+      texture: `${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url=${encodeURIComponent(ORTHO_URL)}`,
+      elevationDecoder: elevationDecoder,
+      bounds: dynamicBounds,
+      wireframe: false,
+      color: [255, 255, 255],
+      elevationMultiplier: exaggeration,
+      transparentColor: [0, 0, 0, 0]
+    });
 
-  deck.setProps({
-    layers: [terrainLayer]
-  });
+    deck.setProps({
+      layers: [terrainLayer]
+    });
+  }
 });
+
+initViewer();
