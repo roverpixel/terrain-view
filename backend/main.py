@@ -46,6 +46,7 @@ class TerrainTilerFactory(TilerFactory):
     pass
 
 dem_cog = TerrainTilerFactory(
+    router_prefix="/dem",
     process_dependency=lambda: elevation_to_rgb
 )
 
