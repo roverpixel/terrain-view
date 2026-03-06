@@ -20,7 +20,7 @@ let dynamicBounds = null;
 async function initViewer() {
   try {
     // Fetch TileJSON or Info to get the actual bounds and center of the data
-    const response = await fetch(`${BACKEND_URL}/ortho/WebMercatorQuad/tilejson.json?url=${encodeURIComponent(ORTHO_URL)}`);
+    const response = await fetch(`${BACKEND_URL}/ortho/WebMercatorQuad/tilejson.json?url=${ORTHO_URL}`);
 
     if (!response.ok) {
       throw new Error(`Failed to fetch dataset metadata: ${response.statusText}`);
@@ -69,8 +69,8 @@ async function initViewer() {
       layers: [
         new TerrainLayer({
           id: 'terrain-layer',
-          elevationData: `${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${encodeURIComponent(DEM_URL)}`,
-          texture: `${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${encodeURIComponent(ORTHO_URL)}`,
+          elevationData: `${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${DEM_URL}`,
+          texture: `${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${ORTHO_URL}`,
           elevationDecoder: elevationDecoder,
           bounds: dynamicBounds,
           wireframe: false,
@@ -106,8 +106,8 @@ slider.addEventListener('input', (e) => {
   if (deck && dynamicBounds) {
     const terrainLayer = new TerrainLayer({
       id: 'terrain-layer',
-      elevationData: `${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${encodeURIComponent(DEM_URL)}`,
-      texture: `${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${encodeURIComponent(ORTHO_URL)}`,
+      elevationData: `${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${DEM_URL}`,
+      texture: `${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${ORTHO_URL}`,
       elevationDecoder: elevationDecoder,
       bounds: dynamicBounds,
       wireframe: false,
