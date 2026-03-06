@@ -1,4 +1,4 @@
-import { Deck, MapView } from '@deck.gl/core';
+import { Deck, MapView, Layer } from '@deck.gl/core';
 import { TerrainLayer } from '@deck.gl/geo-layers';
 
 // Use absolute paths for the data files to avoid any relative path resolution issues in backend
@@ -20,7 +20,7 @@ let dynamicBounds = null;
 async function initViewer() {
   try {
     // Fetch TileJSON or Info to get the actual bounds and center of the data
-    const response = await fetch(`${BACKEND_URL}/ortho/WebMercatorQuad/tilejson.json?url=${encodeURIComponent(ORTHO_URL)}`);
+    const response = await fetch(`${BACKEND_URL}/ortho/WebMercatorQuad/tilejson.json?url=${ORTHO_URL}`);
 
     if (!response.ok) {
       throw new Error(`Failed to fetch dataset metadata: ${response.statusText}`);
@@ -32,7 +32,7 @@ async function initViewer() {
     let centerLon = -122.4;
     let centerLat = 37.75;
     let centerZoom = 11;
-    let minZoom = 0;
+    let minZoom = -10;
     let maxZoom = 20;
 
     if (tileJson.center) {
@@ -66,14 +66,23 @@ async function initViewer() {
       layers: [
         new TerrainLayer({
           id: 'terrain-layer',
-          elevationData: `${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${encodeURIComponent(DEM_URL)}`,
-          texture: `${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${encodeURIComponent(ORTHO_URL)}`,
+          elevationData: `${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${DEM_URL}`,
+          texture: `${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${ORTHO_URL}`,
           elevationDecoder: elevationDecoder,
           bounds: dynamicBounds,
           wireframe: false,
           color: [255, 255, 255],
           elevationMultiplier: exaggeration,
-          transparentColor: [0, 0, 0, 0]
+          transparentColor: [0, 0, 0, 0],
+          fetch: (url, context) => {
+            if (context.propName === 'texture') {
+              return fetch(url, { signal: context.signal })
+                .then(res => res.blob())
+                .then(blob => createImageBitmap(blob))
+                .catch(_ => null);
+            }
+            return Layer.defaultProps.fetch.value(url, context);
+          }
         })
       ]
     });
@@ -94,14 +103,23 @@ slider.addEventListener('input', (e) => {
   if (deck && dynamicBounds) {
     const terrainLayer = new TerrainLayer({
       id: 'terrain-layer',
-      elevationData: `${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${encodeURIComponent(DEM_URL)}`,
-      texture: `${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${encodeURIComponent(ORTHO_URL)}`,
+      elevationData: `${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${DEM_URL}`,
+      texture: `${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${ORTHO_URL}`,
       elevationDecoder: elevationDecoder,
       bounds: dynamicBounds,
       wireframe: false,
       color: [255, 255, 255],
       elevationMultiplier: exaggeration,
-      transparentColor: [0, 0, 0, 0]
+      transparentColor: [0, 0, 0, 0],
+      fetch: (url, context) => {
+        if (context.propName === 'texture') {
+          return fetch(url, { signal: context.signal })
+            .then(res => res.blob())
+            .then(blob => createImageBitmap(blob))
+            .catch(_ => null);
+        }
+        return Layer.defaultProps.fetch.value(url, context);
+      }
     });
 
     deck.setProps({
