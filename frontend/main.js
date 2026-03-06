@@ -32,8 +32,8 @@ async function initViewer() {
     let centerLon = -122.4;
     let centerLat = 37.75;
     let centerZoom = 11;
-    let minZoom = 1;
-    let maxZoom = 16;
+    let minZoom = 0;
+    let maxZoom = 20;
 
     if (tileJson.center) {
       centerLon = tileJson.center[0];
@@ -43,9 +43,6 @@ async function initViewer() {
       centerLon = (dynamicBounds[0] + dynamicBounds[2]) / 2;
       centerLat = (dynamicBounds[1] + dynamicBounds[3]) / 2;
     }
-
-    if (tileJson.minzoom !== undefined) minZoom = tileJson.minzoom;
-    if (tileJson.maxzoom !== undefined) maxZoom = tileJson.maxzoom;
 
     const initialViewState = {
       latitude: centerLat,
