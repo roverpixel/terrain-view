@@ -10,3 +10,23 @@ data/
 *.tif
 venv/
 makefile
+
+# Node modules
+node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+backend/*.log
+frontend/*.log
+*.log
+
+# Playwright
+playwright-report/
+test-results/
+
+# Python virtual environment
+venv/
+__pycache__/
+*.pyc
