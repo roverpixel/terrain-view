@@ -89,6 +89,11 @@ async function initViewer() {
           color: [0, 255, 255],
           elevationMultiplier: exaggeration,
           transparentColor: [0, 0, 0, 0],
+          loadOptions: {
+            terrain: {
+              skirtHeight: 1000 * exaggeration
+            }
+          },
           fetch: (url, context) => {
             if (context.propName === 'texture') {
               return fetch(url, { signal: context.signal })
@@ -125,6 +130,11 @@ slider.addEventListener('input', (e) => {
       wireframe: false,
       color: [0, 255, 0],
       transparentColor: [, 0, 0, 0],
+      loadOptions: {
+        terrain: {
+          skirtHeight: 1000 * exaggeration
+        }
+      },
       fetch: (url, context) => {
         if (context.propName === 'texture') {
           return fetch(url, { signal: context.signal })
