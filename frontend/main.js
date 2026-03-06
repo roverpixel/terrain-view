@@ -6,14 +6,16 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://serverhost:8000'
 const DEM_URL = '/app/data/dem.tif';
 const ORTHO_URL = '/app/data/ortho.tif';
 
-const elevationDecoder = {
-  rScaler: 6553.6,   // Logic: (256 * 256) / 10
-  gScaler: 25.6,     // Logic: 256 / 10
-  bScaler: 0.1,      // Logic: 1 / 10
-  offset: -10000     // Matches the backend +10000 offset
-};
-
 let exaggeration = 1.0;
+
+function getElevationDecoder(exag) {
+  return {
+    rScaler: 6553.6 * exag,   // Logic: (256 * 256) / 10
+    gScaler: 25.6 * exag,     // Logic: 256 / 10
+    bScaler: 0.1 * exag,      // Logic: 1 / 10
+    offset: -10000 * exag     // Matches the backend +10000 offset
+  };
+}
 let deck;
 let dynamicBounds = null;
 
@@ -71,11 +73,10 @@ async function initViewer() {
           id: 'terrain-layer',
           elevationData: `${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${encodeURIComponent(DEM_URL)}`,
           texture: `${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${encodeURIComponent(ORTHO_URL)}`,
-          elevationDecoder: elevationDecoder,
+          elevationDecoder: getElevationDecoder(exaggeration),
           bounds: dynamicBounds,
           wireframe: false,
           color: [255, 255, 255],
-          elevationMultiplier: exaggeration,
           transparentColor: [0, 0, 0, 0]
         })
       ]
@@ -99,11 +100,10 @@ slider.addEventListener('input', (e) => {
       id: 'terrain-layer',
       elevationData: `${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${encodeURIComponent(DEM_URL)}`,
       texture: `${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${encodeURIComponent(ORTHO_URL)}`,
-      elevationDecoder: elevationDecoder,
+      elevationDecoder: getElevationDecoder(exaggeration),
       bounds: dynamicBounds,
       wireframe: false,
       color: [255, 255, 255],
-      elevationMultiplier: exaggeration,
       transparentColor: [0, 0, 0, 0]
     });
 
