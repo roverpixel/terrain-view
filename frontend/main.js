@@ -1,4 +1,4 @@
-import { Deck, MapView } from '@deck.gl/core';
+import { Deck, MapView, Layer } from '@deck.gl/core';
 import { TerrainLayer } from '@deck.gl/geo-layers';
 
 // Use absolute paths for the data files to avoid any relative path resolution issues in backend
@@ -76,7 +76,16 @@ async function initViewer() {
           wireframe: false,
           color: [255, 255, 255],
           elevationMultiplier: exaggeration,
-          transparentColor: [0, 0, 0, 0]
+          transparentColor: [0, 0, 0, 0],
+          fetch: (url, context) => {
+            if (context.propName === 'texture') {
+              return fetch(url, { signal: context.signal })
+                .then(res => res.blob())
+                .then(blob => createImageBitmap(blob))
+                .catch(_ => null);
+            }
+            return Layer.defaultProps.fetch.value(url, context);
+          }
         })
       ]
     });
@@ -104,7 +113,16 @@ slider.addEventListener('input', (e) => {
       wireframe: false,
       color: [255, 255, 255],
       elevationMultiplier: exaggeration,
-      transparentColor: [0, 0, 0, 0]
+      transparentColor: [0, 0, 0, 0],
+      fetch: (url, context) => {
+        if (context.propName === 'texture') {
+          return fetch(url, { signal: context.signal })
+            .then(res => res.blob())
+            .then(blob => createImageBitmap(blob))
+            .catch(_ => null);
+        }
+        return Layer.defaultProps.fetch.value(url, context);
+      }
     });
 
     deck.setProps({
