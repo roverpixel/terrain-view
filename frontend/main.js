@@ -70,7 +70,7 @@ async function initViewer() {
           id: 'terrain-layer',
           elevationData: `${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${DEM_URL}`,
           texture: `${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${ORTHO_URL}`,
-          elevationDecoder: elevationDecoder,
+          elevationDecoder: getElevationDecoder(exaggeration),
           bounds: dynamicBounds,
           wireframe: false,
           color: [255, 255, 255],
@@ -111,7 +111,7 @@ slider.addEventListener('input', (e) => {
       bounds: dynamicBounds,
       wireframe: false,
       color: [255, 255, 255],
-      elevationMultiplier: exaggeration,
+      elevationDecoder: getElevationDecoder(exaggeration),
       transparentColor: [0, 0, 0, 0],
       fetch: (url, context) => {
         if (context.propName === 'texture') {
