@@ -1,4 +1,4 @@
-import { Deck } from '@deck.gl/core';
+import { Deck, MapView } from '@deck.gl/core';
 import { TerrainLayer } from '@deck.gl/geo-layers';
 
 // Use absolute paths for the data files to avoid any relative path resolution issues in backend
@@ -60,12 +60,17 @@ async function initViewer() {
     deck = new Deck({
       container: 'app',
       initialViewState: initialViewState,
-      controller: true,
+      views: [
+        new MapView({
+          id: 'map',
+          controller: true
+        })
+      ],
       layers: [
         new TerrainLayer({
           id: 'terrain-layer',
-          elevationData: `${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url=${encodeURIComponent(DEM_URL)}`,
-          texture: `${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url=${encodeURIComponent(ORTHO_URL)}`,
+          elevationData: `${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${encodeURIComponent(DEM_URL)}`,
+          texture: `${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${encodeURIComponent(ORTHO_URL)}`,
           elevationDecoder: elevationDecoder,
           bounds: dynamicBounds,
           wireframe: false,
@@ -92,8 +97,8 @@ slider.addEventListener('input', (e) => {
   if (deck && dynamicBounds) {
     const terrainLayer = new TerrainLayer({
       id: 'terrain-layer',
-      elevationData: `${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url=${encodeURIComponent(DEM_URL)}`,
-      texture: `${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url=${encodeURIComponent(ORTHO_URL)}`,
+      elevationData: `${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${encodeURIComponent(DEM_URL)}`,
+      texture: `${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${encodeURIComponent(ORTHO_URL)}`,
       elevationDecoder: elevationDecoder,
       bounds: dynamicBounds,
       wireframe: false,
