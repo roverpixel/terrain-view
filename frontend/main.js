@@ -1,4 +1,4 @@
-import { Deck, MapView, Layer } from '@deck.gl/core';
+import { Deck, MapView, Layer, AmbientLight, LightingEffect } from '@deck.gl/core';
 import { TerrainLayer } from '@deck.gl/geo-layers';
 
 // Use absolute paths for the data files to avoid any relative path resolution issues in backend
@@ -18,6 +18,13 @@ function getElevationDecoder(exag) {
 }
 let deck;
 let dynamicBounds = null;
+
+// Setup lighting 
+const ambientLight = new AmbientLight({
+  color: [255, 255, 255],
+  intensity: 3.0
+});
+const lightingEffect = new LightingEffect({ambientLight});
 
 async function initViewer() {
   try {
@@ -59,6 +66,11 @@ async function initViewer() {
     deck = new Deck({
       container: 'app',
       initialViewState: initialViewState,
+      effects: [lightingEffect],
+      controller: {
+        dragRotate: true,
+        dragMode: 'rotate'
+      },
       views: [
         new MapView({
           id: 'map',
@@ -73,7 +85,8 @@ async function initViewer() {
           elevationDecoder: getElevationDecoder(exaggeration),
           bounds: dynamicBounds,
           wireframe: false,
-          color: [255, 255, 255],
+          meshMaxError: 10,
+          color: [0, 255, 255],
           elevationMultiplier: exaggeration,
           transparentColor: [0, 0, 0, 0],
           fetch: (url, context) => {
@@ -110,8 +123,8 @@ slider.addEventListener('input', (e) => {
       elevationDecoder: getElevationDecoder(exaggeration),
       bounds: dynamicBounds,
       wireframe: false,
-      color: [255, 255, 255],
-      transparentColor: [0, 0, 0, 0],
+      color: [0, 255, 0],
+      transparentColor: [, 0, 0, 0],
       fetch: (url, context) => {
         if (context.propName === 'texture') {
           return fetch(url, { signal: context.signal })

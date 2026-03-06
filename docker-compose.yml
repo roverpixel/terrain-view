@@ -20,3 +20,6 @@ services:
       - "${FRONTEND_PORT:-7006}:7000"
     depends_on:
       - backend
+    volumes:
+      - ./frontend:/app         # Mount the whole folder for hot editing
+      - /app/node_modules       # Keep the container's node_modules safe

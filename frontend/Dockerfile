@@ -7,6 +7,7 @@ COPY package.json package-lock.json* ./
 
 # Install dependencies
 RUN npm install
+RUN npm install --save-dev nodemon
 
 # Copy all frontend files
 COPY . .
