@@ -129,7 +129,7 @@ slider.addEventListener('input', (e) => {
       bounds: dynamicBounds,
       wireframe: false,
       color: [0, 255, 0],
-      transparentColor: [, 0, 0, 0],
+      transparentColor: [ 0, 0, 0, 0],
       loadOptions: {
         terrain: {
           skirtHeight: 1000 * exaggeration
