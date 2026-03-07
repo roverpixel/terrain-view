@@ -74,8 +74,8 @@ async function initViewer() {
     const tileJson = await orthoResponse.json();
     const demTileJson = await demResponse.json();
 
-    orthoTiles = tileJson.tiles;
-    demTiles = demTileJson.tiles;
+    orthoTiles = [`${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url=${ORTHO_URL}`];
+    demTiles = [`${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url=${DEM_URL}`];
     dynamicBounds = tileJson.bounds;
 
     let centerLon = -122.4;

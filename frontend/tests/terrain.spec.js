@@ -12,6 +12,8 @@ test('viewer loads and deck.gl canvas is present', async ({ page }) => {
 
   const appContent = await container.innerHTML();
 
+  await page.screenshot({ path: '/home/jules/verification/terrain.png' });
+
   if (appContent.includes('Error')) {
       console.log('An error occurred loading the viewer:', appContent);
   } else {
@@ -20,5 +22,4 @@ test('viewer loads and deck.gl canvas is present', async ({ page }) => {
       console.log("Canvas is visible");
   }
 
-  await page.screenshot({ path: '/home/jules/verification/terrain.png' });
 });
