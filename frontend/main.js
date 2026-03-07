@@ -18,12 +18,14 @@ function getElevationDecoder(exag) {
 }
 let deck;
 let dynamicBounds = null;
+let demTiles = null;
+let orthoTiles = null;
 
-function createTerrainLayer(exag, bounds) {
+function createTerrainLayer(exag, bounds, elevationData, texture) {
   return new TerrainLayer({
     id: 'terrain-layer',
-    elevationData: `${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${DEM_URL}`,
-    texture: `${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${ORTHO_URL}`,
+    elevationData: elevationData,
+    texture: texture,
     elevationDecoder: getElevationDecoder(exag),
     bounds: bounds,
     wireframe: false,
@@ -56,14 +58,24 @@ const lightingEffect = new LightingEffect({ambientLight});
 
 async function initViewer() {
   try {
-    // Fetch TileJSON or Info to get the actual bounds and center of the data
-    const response = await fetch(`${BACKEND_URL}/ortho/WebMercatorQuad/tilejson.json?url=${ORTHO_URL}`);
+    // Fetch TileJSON or Info to get the actual bounds, center, and tile endpoints of the data
+    const [orthoResponse, demResponse] = await Promise.all([
+      fetch(`${BACKEND_URL}/ortho/WebMercatorQuad/tilejson.json?url=${ORTHO_URL}`),
+      fetch(`${BACKEND_URL}/dem/WebMercatorQuad/tilejson.json?url=${DEM_URL}`)
+    ]);
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch dataset metadata: ${response.statusText}`);
+    if (!orthoResponse.ok) {
+      throw new Error(`Failed to fetch ortho dataset metadata: ${orthoResponse.statusText}`);
+    }
+    if (!demResponse.ok) {
+      throw new Error(`Failed to fetch dem dataset metadata: ${demResponse.statusText}`);
     }
 
-    const tileJson = await response.json();
+    const tileJson = await orthoResponse.json();
+    const demTileJson = await demResponse.json();
+
+    orthoTiles = tileJson.tiles;
+    demTiles = demTileJson.tiles;
     dynamicBounds = tileJson.bounds;
 
     let centerLon = -122.4;
@@ -106,7 +118,7 @@ async function initViewer() {
         })
       ],
       layers: [
-        createTerrainLayer(exaggeration, dynamicBounds)
+        createTerrainLayer(exaggeration, dynamicBounds, demTiles, orthoTiles)
       ]
     });
 
@@ -123,9 +135,9 @@ slider.addEventListener('input', (e) => {
   exaggeration = parseFloat(e.target.value);
   valLabel.textContent = exaggeration.toFixed(1);
 
-  if (deck && dynamicBounds) {
+  if (deck && dynamicBounds && demTiles && orthoTiles) {
     deck.setProps({
-      layers: [createTerrainLayer(exaggeration, dynamicBounds)]
+      layers: [createTerrainLayer(exaggeration, dynamicBounds, demTiles, orthoTiles)]
     });
   }
 });
