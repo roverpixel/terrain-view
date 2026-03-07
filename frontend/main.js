@@ -19,6 +19,34 @@ function getElevationDecoder(exag) {
 let deck;
 let dynamicBounds = null;
 
+function createTerrainLayer(exag, bounds) {
+  return new TerrainLayer({
+    id: 'terrain-layer',
+    elevationData: `${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${DEM_URL}`,
+    texture: `${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${ORTHO_URL}`,
+    elevationDecoder: getElevationDecoder(exag),
+    bounds: bounds,
+    wireframe: false,
+    meshMaxError: 10,
+    color: [255, 255, 255],
+    transparentColor: [0, 0, 0, 0],
+    loadOptions: {
+      terrain: {
+        skirtHeight: 1000 * exag
+      }
+    },
+    fetch: (url, context) => {
+      if (context.propName === 'texture') {
+        return fetch(url, { signal: context.signal })
+          .then(res => res.blob())
+          .then(blob => createImageBitmap(blob))
+          .catch(_ => null);
+      }
+      return Layer.defaultProps.fetch.value(url, context);
+    }
+  });
+}
+
 // Setup lighting 
 const ambientLight = new AmbientLight({
   color: [255, 255, 255],
@@ -78,32 +106,7 @@ async function initViewer() {
         })
       ],
       layers: [
-        new TerrainLayer({
-          id: 'terrain-layer',
-          elevationData: `${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${DEM_URL}`,
-          texture: `${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${ORTHO_URL}`,
-          elevationDecoder: getElevationDecoder(exaggeration),
-          bounds: dynamicBounds,
-          wireframe: false,
-          meshMaxError: 10,
-          color: [0, 255, 255],
-          elevationMultiplier: exaggeration,
-          transparentColor: [0, 0, 0, 0],
-          loadOptions: {
-            terrain: {
-              skirtHeight: 1000 * exaggeration
-            }
-          },
-          fetch: (url, context) => {
-            if (context.propName === 'texture') {
-              return fetch(url, { signal: context.signal })
-                .then(res => res.blob())
-                .then(blob => createImageBitmap(blob))
-                .catch(_ => null);
-            }
-            return Layer.defaultProps.fetch.value(url, context);
-          }
-        })
+        createTerrainLayer(exaggeration, dynamicBounds)
       ]
     });
 
@@ -121,33 +124,8 @@ slider.addEventListener('input', (e) => {
   valLabel.textContent = exaggeration.toFixed(1);
 
   if (deck && dynamicBounds) {
-    const terrainLayer = new TerrainLayer({
-      id: 'terrain-layer',
-      elevationData: `${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${DEM_URL}`,
-      texture: `${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${ORTHO_URL}`,
-      elevationDecoder: getElevationDecoder(exaggeration),
-      bounds: dynamicBounds,
-      wireframe: false,
-      color: [0, 255, 0],
-      transparentColor: [ 0, 0, 0, 0],
-      loadOptions: {
-        terrain: {
-          skirtHeight: 1000 * exaggeration
-        }
-      },
-      fetch: (url, context) => {
-        if (context.propName === 'texture') {
-          return fetch(url, { signal: context.signal })
-            .then(res => res.blob())
-            .then(blob => createImageBitmap(blob))
-            .catch(_ => null);
-        }
-        return Layer.defaultProps.fetch.value(url, context);
-      }
-    });
-
     deck.setProps({
-      layers: [terrainLayer]
+      layers: [createTerrainLayer(exaggeration, dynamicBounds)]
     });
   }
 });
