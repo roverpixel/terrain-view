@@ -32,6 +32,7 @@ When writing or modifying code for this project, please adhere to the following 
 
 ### 3. Data Processing (GDAL)
 * Whenever writing data processing scripts, utilize standard `gdal_translate` and `gdaladdo` commands to convert raw GeoTIFFs into valid Cloud Optimized GeoTIFFs (COGs) with internal overviews.
+* **Edge Interpolation / Non-Rectangular Data:** If dealing with non-rectangular DEMs and Orthos (like orbital passes with NoData edges), ensure the DEM's edges are filled/extrapolated outwards using `gdal_fillnodata.py -nomask`. This ensures the deck.gl terrain mesh stays physically flat or appropriately sloping underneath the transparent regions of the orthoimage, preventing vertical "walls" that block oblique views of edge depressions.
 
 ### 4. General Development
 * **Environment:** Keep Python dependencies in a `requirements.txt` and Node dependencies in a `package.json`.

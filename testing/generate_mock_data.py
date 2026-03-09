@@ -20,6 +20,12 @@ def create_dem_and_ortho(width, height, bounds, dem_path, ortho_path):
 
     dem_data = (np.sin(xv) * np.cos(yv) * 500 + 500).astype(np.uint16)
 
+    # We leave the entire DEM populated with continuous sinusoidal waves.
+    # In a real scenario, this simulates having run `gdal_fillnodata.py`
+    # to extrapolate edge terrain outward underneath transparent ortho regions.
+    # If this DEM had nodata (0) margins matching the ortho, deck.gl would
+    # interpolate a physical wall down to 0, blocking views of depressions.
+
     temp_dem = "temp_dem.tif"
     with rasterio.open(
         temp_dem, 'w', driver='GTiff',
@@ -43,18 +49,23 @@ def create_dem_and_ortho(width, height, bounds, dem_path, ortho_path):
     g[:margin, :] = 0; g[-margin:, :] = 0; g[:, :margin] = 0; g[:, -margin:] = 0
     b[:margin, :] = 0; b[-margin:, :] = 0; b[:, :margin] = 0; b[:, -margin:] = 0
 
+    # Create an alpha channel based on the margin
+    a = np.full((height, width), 255, dtype=np.uint8)
+    a[:margin, :] = 0; a[-margin:, :] = 0; a[:, :margin] = 0; a[:, -margin:] = 0
+
     temp_ortho = "temp_ortho.tif"
     with rasterio.open(
         temp_ortho, 'w', driver='GTiff',
-        height=height, width=width, count=3,
+        height=height, width=width, count=4,
         dtype=r.dtype, crs='+proj=latlong',
-        transform=transform, nodata=0
+        transform=transform
     ) as dst:
         dst.write(r, 1)
         dst.write(g, 2)
         dst.write(b, 3)
+        dst.write(a, 4)
 
-    cog_profile = cog_profiles.get("jpeg")
+    cog_profile = cog_profiles.get("deflate")
     cog_translate(temp_ortho, ortho_path, cog_profile, in_memory=True)
     os.remove(temp_ortho)
 
