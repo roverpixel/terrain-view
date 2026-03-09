@@ -41,7 +41,7 @@ To fix this geometry artifact *without* adding complex overhead to the tile serv
 You can perform this edge extrapolation using standard GDAL tools:
 
 ```bash
-gdal_fillnodata.py -md 50 -nomask original_dem.tif filled_dem.tif
+gdal_fillnodata.py -md 50 original_dem.tif filled_dem.tif
 ```
 
    # Or move the generated files into your primary data directory
