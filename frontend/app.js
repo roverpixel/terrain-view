@@ -33,6 +33,10 @@ function createTerrainLayer(exag, bounds, elevationData, texture, wireframe) {
     meshMaxError: 10,
     color: [255, 255, 255],
     transparentColor: [0, 0, 0, 0],
+    // Tell deck.gl's tile culling system that this terrain can stretch vertically
+    // up to 20,000 meters times the current exaggeration.
+    // This stops tiles from disappearing when zooming in close to tall peaks.
+    zRange: [0, 20000 * exag],
     loadOptions: {
       terrain: {
         skirtHeight: 1000 * exag
