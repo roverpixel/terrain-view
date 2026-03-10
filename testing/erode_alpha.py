@@ -8,31 +8,36 @@ import os
 
 def erode_alpha(input_path, output_path, iterations=2, overview_level=None):
     """
-    Erodes the alpha channel (Band 4) of an RGBA GeoTIFF inward by a small amount.
+    Erodes the alpha channel of an image inward by a small amount.
     This ensures that when 3D terrain skirts drop down at the boundaries of the
     visible data, the textures on those skirts are completely transparent,
-    preventing "striped draping" artifacts.
+    preventing "striped draping" artifacts. Works with single-band or RGB inputs.
     """
     print(f"Reading {input_path}...")
     with rasterio.open(input_path) as src:
-        # We need at least 3 bands (RGB). If there is an alpha band, it's band 4.
-        if src.count < 3:
-            raise ValueError("Input image must have at least 3 bands (RGB).")
+        if src.count < 1:
+            raise ValueError("Input image must have at least 1 band.")
 
-        r = src.read(1)
-        g = src.read(2)
-        b = src.read(3)
+        # Determine number of data bands vs alpha band
+        if src.count in (1, 2):
+            data_bands_count = 1
+            has_alpha = src.count == 2
+            alpha_band_idx = 2
+        else:
+            data_bands_count = 3
+            has_alpha = src.count >= 4
+            alpha_band_idx = 4
+
+        bands_data = [src.read(i) for i in range(1, data_bands_count + 1)]
 
         # Determine the initial valid data mask based on priority:
-        # 1. Alpha band (band 4)
+        # 1. Alpha band
         # 2. Dataset mask
         # 3. NoData value
 
-        has_alpha = src.count >= 4
-
         if has_alpha:
             print("Using Priority 1: Alpha band found.")
-            alpha = src.read(4)
+            alpha = src.read(alpha_band_idx)
             valid_mask = alpha > 0
             original_alpha = alpha
         else:
@@ -53,10 +58,10 @@ def erode_alpha(input_path, output_path, iterations=2, overview_level=None):
             elif has_nodata:
                  print(f"Using Priority 3: NoData value found ({src.nodata}).")
                  # Check the first band for nodata as a representative mask
-                 valid_mask = r != src.nodata
+                 valid_mask = bands_data[0] != src.nodata
             else:
                  print("Warning: No Alpha, Mask, or NoData found. The entire image will be treated as valid data.")
-                 valid_mask = np.ones_like(r, dtype=bool)
+                 valid_mask = np.ones_like(bands_data[0], dtype=bool)
 
             # If we didn't have an alpha band, we create a fully opaque one for valid pixels
             original_alpha = np.where(valid_mask, 255, 0).astype(np.uint8)
@@ -81,21 +86,19 @@ def erode_alpha(input_path, output_path, iterations=2, overview_level=None):
     # If the image was originally RGB-only, original_alpha is 255 where valid.
     new_alpha[eroded_mask] = original_alpha[eroded_mask]
 
-    # We also need to zero out RGB where alpha is now 0 to prevent color leaking
+    # We also need to zero out data bands where alpha is now 0 to prevent color leaking
     # if clamping or texture interpolation happens.
-    r[~eroded_mask] = 0
-    g[~eroded_mask] = 0
-    b[~eroded_mask] = 0
+    for i in range(data_bands_count):
+        bands_data[i][~eroded_mask] = 0
 
     # Write to a temporary file first before converting to COG
     temp_path = output_path + ".tmp.tif"
-    profile.update(count=4)
+    profile.update(count=data_bands_count + 1)
     print("Writing temporary eroded file...")
     with rasterio.open(temp_path, 'w', **profile) as dst:
-        dst.write(r, 1)
-        dst.write(g, 2)
-        dst.write(b, 3)
-        dst.write(new_alpha, 4)
+        for i in range(data_bands_count):
+            dst.write(bands_data[i], i + 1)
+        dst.write(new_alpha, data_bands_count + 1)
 
     print("Translating to Cloud Optimized GeoTIFF (COG)...")
     # Use deflate compression as JPEG does not support alpha channels well
@@ -107,8 +110,8 @@ def erode_alpha(input_path, output_path, iterations=2, overview_level=None):
     print(f"Successfully wrote eroded COG to {output_path}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Erode the alpha channel of an RGBA Orthoimage.")
-    parser.add_argument("input", help="Path to the input RGBA GeoTIFF.")
+    parser = argparse.ArgumentParser(description="Erode the alpha channel of an image.")
+    parser.add_argument("input", help="Path to the input GeoTIFF.")
     parser.add_argument("output", help="Path to the output eroded COG.")
     parser.add_argument("--iterations", type=int, default=2, help="Number of pixels to erode the alpha mask inward. (default: 2)")
     parser.add_argument("--overview-level", type=int, default=None, help="Number of overview levels to generate. If not set, uses rio-cogeo default.")
