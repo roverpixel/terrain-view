@@ -6,7 +6,7 @@ from rio_cogeo.cogeo import cog_translate
 from rio_cogeo.profiles import cog_profiles
 import os
 
-def erode_alpha(input_path, output_path, iterations=2):
+def erode_alpha(input_path, output_path, iterations=2, overview_level=None):
     """
     Erodes the alpha channel (Band 4) of an RGBA GeoTIFF inward by a small amount.
     This ensures that when 3D terrain skirts drop down at the boundaries of the
@@ -100,7 +100,7 @@ def erode_alpha(input_path, output_path, iterations=2):
     print("Translating to Cloud Optimized GeoTIFF (COG)...")
     # Use deflate compression as JPEG does not support alpha channels well
     cog_profile = cog_profiles.get("deflate")
-    cog_translate(temp_path, output_path, cog_profile, in_memory=True, quiet=True)
+    cog_translate(temp_path, output_path, cog_profile, in_memory=True, quiet=True, overview_level=overview_level)
 
     print("Cleaning up temporary file...")
     os.remove(temp_path)
@@ -111,6 +111,7 @@ if __name__ == "__main__":
     parser.add_argument("input", help="Path to the input RGBA GeoTIFF.")
     parser.add_argument("output", help="Path to the output eroded COG.")
     parser.add_argument("--iterations", type=int, default=2, help="Number of pixels to erode the alpha mask inward. (default: 2)")
+    parser.add_argument("--overview-level", type=int, default=None, help="Number of overview levels to generate. If not set, uses rio-cogeo default.")
 
     args = parser.parse_args()
-    erode_alpha(args.input, args.output, args.iterations)
+    erode_alpha(args.input, args.output, args.iterations, args.overview_level)
