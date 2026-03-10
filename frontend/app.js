@@ -115,7 +115,9 @@ async function initViewer() {
       views: [
         new MapView({
           id: 'map',
-          controller: true
+          controller: true,
+          nearZMultiplier: 0.0001,
+          farZMultiplier: 10000
         })
       ],
       layers: [
