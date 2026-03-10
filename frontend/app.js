@@ -7,6 +7,7 @@ const DEM_URL = '/app/data/dem.tif';
 const ORTHO_URL = '/app/data/ortho.tif';
 
 let exaggeration = 1.0;
+let isWireframe = false;
 
 function getElevationDecoder(exag) {
   return {
@@ -21,14 +22,14 @@ let dynamicBounds = null;
 let demTiles = null;
 let orthoTiles = null;
 
-function createTerrainLayer(exag, bounds, elevationData, texture) {
+function createTerrainLayer(exag, bounds, elevationData, texture, wireframe) {
   return new TerrainLayer({
     id: 'terrain-layer',
     elevationData: elevationData,
     texture: texture,
     elevationDecoder: getElevationDecoder(exag*10),
     bounds: bounds,
-    wireframe: false,
+    wireframe: wireframe,
     meshMaxError: 10,
     color: [255, 255, 255],
     transparentColor: [0, 0, 0, 0],
@@ -118,7 +119,7 @@ async function initViewer() {
         })
       ],
       layers: [
-        createTerrainLayer(exaggeration, dynamicBounds, demTiles, orthoTiles)
+        createTerrainLayer(exaggeration, dynamicBounds, demTiles, orthoTiles, isWireframe)
       ]
     });
 
@@ -130,6 +131,7 @@ async function initViewer() {
 
 const slider = document.getElementById('exaggeration');
 const valLabel = document.getElementById('exag-val');
+const wireframeToggle = document.getElementById('wireframe-toggle');
 
 slider.addEventListener('input', (e) => {
   exaggeration = parseFloat(e.target.value);
@@ -137,7 +139,16 @@ slider.addEventListener('input', (e) => {
 
   if (deck && dynamicBounds && demTiles && orthoTiles) {
     deck.setProps({
-      layers: [createTerrainLayer(exaggeration, dynamicBounds, demTiles, orthoTiles)]
+      layers: [createTerrainLayer(exaggeration, dynamicBounds, demTiles, orthoTiles, isWireframe)]
+    });
+  }
+});
+
+wireframeToggle.addEventListener('change', (e) => {
+  isWireframe = e.target.checked;
+  if (deck && dynamicBounds && demTiles && orthoTiles) {
+    deck.setProps({
+      layers: [createTerrainLayer(exaggeration, dynamicBounds, demTiles, orthoTiles, isWireframe)]
     });
   }
 });
