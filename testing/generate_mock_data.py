@@ -69,6 +69,14 @@ def create_dem_and_ortho(width, height, bounds, dem_path, ortho_path):
     cog_translate(temp_ortho, ortho_path, cog_profile, in_memory=True)
     os.remove(temp_ortho)
 
+    # Automatically erode the alpha channel of the generated ortho
+    # This matches the preprocessing requirement to fix striped draping
+    # by ensuring the edge of the ortho alpha mask is slightly recessed
+    # from any physical geometry walls.
+    print("Eroding alpha channel of generated orthoimage...")
+    from erode_alpha import erode_alpha
+    erode_alpha(ortho_path, ortho_path, iterations=2)
+
 if __name__ == "__main__":
     os.makedirs("data", exist_ok=True)
     bounds = (-122.5, 37.7, -122.3, 37.8)
