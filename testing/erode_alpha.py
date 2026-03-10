@@ -15,29 +15,71 @@ def erode_alpha(input_path, output_path, iterations=2):
     """
     print(f"Reading {input_path}...")
     with rasterio.open(input_path) as src:
-        # Check if the image has at least 4 bands (assumed RGBA)
-        if src.count < 4:
-            raise ValueError("Input image must have at least 4 bands (RGBA).")
+        # We need at least 3 bands (RGB). If there is an alpha band, it's band 4.
+        if src.count < 3:
+            raise ValueError("Input image must have at least 3 bands (RGB).")
 
-        # Read the first 4 bands (RGB and Alpha)
         r = src.read(1)
         g = src.read(2)
         b = src.read(3)
-        alpha = src.read(4)
+
+        # Determine the initial valid data mask based on priority:
+        # 1. Alpha band (band 4)
+        # 2. Dataset mask
+        # 3. NoData value
+
+        has_alpha = src.count >= 4
+
+        if has_alpha:
+            print("Using Priority 1: Alpha band found.")
+            alpha = src.read(4)
+            valid_mask = alpha > 0
+            original_alpha = alpha
+        else:
+            # Check for dataset mask (often used if not an explicit alpha band)
+            # rasterio's `dataset_mask` returns 255 for valid data, 0 for invalid.
+            # However, if there are no nodata values or masks set, it returns all 255.
+            ds_mask = src.dataset_mask()
+
+            # Check if there is an explicit nodata value on the bands
+            has_nodata = any(src.nodata for i in src.indexes)
+
+            # A true mask usually has some 0s. If it doesn't have 0s, it might just be a default mask.
+            # Priority 2: dataset_mask has invalid pixels
+            if 0 in ds_mask:
+                 print("Using Priority 2: Dataset mask found.")
+                 valid_mask = ds_mask > 0
+            # Priority 3: NoData values
+            elif has_nodata:
+                 print(f"Using Priority 3: NoData value found ({src.nodata}).")
+                 # Check the first band for nodata as a representative mask
+                 valid_mask = r != src.nodata
+            else:
+                 print("Warning: No Alpha, Mask, or NoData found. The entire image will be treated as valid data.")
+                 valid_mask = np.ones_like(r, dtype=bool)
+
+            # If we didn't have an alpha band, we create a fully opaque one for valid pixels
+            original_alpha = np.where(valid_mask, 255, 0).astype(np.uint8)
 
         profile = src.profile
 
-    print(f"Eroding alpha channel by {iterations} iteration(s)...")
-    # Alpha is typically 0 (transparent) or 255 (opaque). We erode the opaque region.
-    # binary_erosion considers True (non-zero) as the object to be eroded.
-    alpha_mask = alpha > 0
-    eroded_mask = binary_erosion(alpha_mask, iterations=iterations)
+        # Once we convert to an explicit alpha band, we should remove the 'nodata'
+        # property to prevent rio-cogeo from conflicting between nodata and alpha
+        # and potentially recreating the very artifact we are trying to fix by making
+        # the eroded black pixels "nodata" again.
+        if 'nodata' in profile:
+            print("Removing 'nodata' tag from profile to favor new alpha mask.")
+            profile.pop('nodata')
 
-    # Apply the eroded mask back to the alpha channel (preserving original opaque values, usually 255)
-    new_alpha = np.zeros_like(alpha)
-    # We could just do new_alpha[eroded_mask] = 255, but to be safe with partial transparencies
-    # we copy the original alpha values where the eroded mask is still True.
-    new_alpha[eroded_mask] = alpha[eroded_mask]
+    print(f"Eroding valid data mask by {iterations} iteration(s)...")
+    # binary_erosion considers True (valid data) as the object to be eroded.
+    eroded_mask = binary_erosion(valid_mask, iterations=iterations)
+
+    # Create the new alpha channel using the eroded mask.
+    new_alpha = np.zeros_like(original_alpha)
+    # Preserve original alpha intensity where the eroded mask is still True.
+    # If the image was originally RGB-only, original_alpha is 255 where valid.
+    new_alpha[eroded_mask] = original_alpha[eroded_mask]
 
     # We also need to zero out RGB where alpha is now 0 to prevent color leaking
     # if clamping or texture interpolation happens.
