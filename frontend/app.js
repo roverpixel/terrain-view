@@ -26,7 +26,7 @@ function createTerrainLayer(exag, bounds, elevationData, texture) {
     id: 'terrain-layer',
     elevationData: elevationData,
     texture: texture,
-    elevationDecoder: getElevationDecoder(exag),
+    elevationDecoder: getElevationDecoder(exag*10),
     bounds: bounds,
     wireframe: false,
     meshMaxError: 10,
