@@ -59,9 +59,14 @@ dem_cog = TerrainTilerFactory(
     process_dependency=lambda: elevation_to_rgb
 )
 
+# Create a separate pure TilerFactory for the DEM to extract raw data stats
+# without the Mapbox RGB conversion process_dependency.
+dem_raw_cog = TilerFactory()
+
 # We define the routers without prefixes inside the factory, and add them with the app prefix
 app.include_router(cog.router, prefix="/ortho", tags=["Orthoimage"])
 app.include_router(dem_cog.router, prefix="/dem", tags=["DEM"])
+app.include_router(dem_raw_cog.router, prefix="/dem/raw", tags=["DEM Raw Stats"])
 
 add_exception_handlers(app, DEFAULT_STATUS_CODES)
 

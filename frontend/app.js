@@ -8,13 +8,18 @@ const ORTHO_URL = '/app/data/ortho.tif';
 
 let exaggeration = 1.0;
 let isWireframe = false;
+let baseElevation = 0;
+let maxElevation = 20000;
 
 function getElevationDecoder(exag) {
   return {
     rScaler: 6553.6 * exag,   // Logic: (256 * 256) / 10
     gScaler: 25.6 * exag,     // Logic: 256 / 10
     bScaler: 0.1 * exag,      // Logic: 1 / 10
-    offset: -10000 * exag     // Matches the backend +10000 offset
+    // We normalize the bottom of the terrain to 0 before exaggerating,
+    // so scaling pushes mountains up instead of pushing the negative base deeper.
+    // We also account for the +10000 backend offset.
+    offset: (-10000 - baseElevation) * exag
   };
 }
 let deck;
@@ -23,6 +28,10 @@ let demTiles = null;
 let orthoTiles = null;
 
 function createTerrainLayer(exag, bounds, elevationData, texture, wireframe) {
+  // Since we normalized the base elevation to 0, the actual maximum vertical range
+  // above the baseline is the difference between max and base.
+  const elevationSpan = Math.max(0, maxElevation - baseElevation);
+
   return new TerrainLayer({
     id: 'terrain-layer',
     elevationData: elevationData,
@@ -33,10 +42,9 @@ function createTerrainLayer(exag, bounds, elevationData, texture, wireframe) {
     meshMaxError: 10,
     color: [255, 255, 255],
     transparentColor: [0, 0, 0, 0],
-    // Tell deck.gl's tile culling system that this terrain can stretch vertically
-    // up to 20,000 meters times the current exaggeration.
-    // This stops tiles from disappearing when zooming in close to tall peaks.
-    zRange: [0, 20000 * exag],
+    // Tell deck.gl's tile culling system exactly how high the mesh stretches above z=0.
+    // This perfectly fits the normalized bounding box and stops tiles from disappearing.
+    zRange: [0, elevationSpan * exag * 10],
     loadOptions: {
       terrain: {
         skirtHeight: 1000 * exag
@@ -64,9 +72,10 @@ const lightingEffect = new LightingEffect({ambientLight});
 async function initViewer() {
   try {
     // Fetch TileJSON or Info to get the actual bounds, center, and tile endpoints of the data
-    const [orthoResponse, demResponse] = await Promise.all([
+    const [orthoResponse, demResponse, demStatsResponse] = await Promise.all([
       fetch(`${BACKEND_URL}/ortho/WebMercatorQuad/tilejson.json?url=${ORTHO_URL}`),
-      fetch(`${BACKEND_URL}/dem/WebMercatorQuad/tilejson.json?url=${DEM_URL}`)
+      fetch(`${BACKEND_URL}/dem/WebMercatorQuad/tilejson.json?url=${DEM_URL}`),
+      fetch(`${BACKEND_URL}/dem/raw/statistics?url=${DEM_URL}`)
     ]);
 
     if (!orthoResponse.ok) {
@@ -78,6 +87,23 @@ async function initViewer() {
 
     const tileJson = await orthoResponse.json();
     const demTileJson = await demResponse.json();
+
+    // Attempt to extract real base and max elevations from the raw dataset
+    if (demStatsResponse.ok) {
+      try {
+        const statsData = await demStatsResponse.json();
+        const bandKey = Object.keys(statsData)[0];
+        if (bandKey && statsData[bandKey] && statsData[bandKey].min !== undefined) {
+          baseElevation = statsData[bandKey].min;
+          maxElevation = statsData[bandKey].max;
+          console.log(`Extracted DEM stats - Min: ${baseElevation}, Max: ${maxElevation}`);
+        }
+      } catch (e) {
+        console.warn('Failed to parse DEM statistics, falling back to defaults', e);
+      }
+    } else {
+      console.warn('Failed to fetch DEM statistics, falling back to defaults', demStatsResponse.statusText);
+    }
 
     orthoTiles = [`${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${ORTHO_URL}`];
     demTiles = [`${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${DEM_URL}`];
@@ -120,8 +146,8 @@ async function initViewer() {
         new MapView({
           id: 'map',
           controller: true,
-          nearZMultiplier: 0.0001,
-          farZMultiplier: 10000
+          nearZMultiplier: 0.01,
+          farZMultiplier: 100
         })
       ],
       layers: [
