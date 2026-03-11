@@ -40,6 +40,7 @@ function createTerrainLayer(exag, bounds, elevationData, texture, wireframe, min
     texture: texture,
     elevationDecoder: getElevationDecoder(exag*10),
     bounds: bounds,
+    extent: bounds,
     wireframe: wireframe,
     meshMaxError: 10,
     color: [255, 255, 255],
@@ -111,7 +112,20 @@ async function initViewer() {
 
     orthoTiles = [`${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${ORTHO_URL}`];
     demTiles = [`${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${DEM_URL}`];
-    dynamicBounds = tileJson.bounds;
+
+    // Calculate intersection of both datasets bounds [minX, minY, maxX, maxY]
+    const ob = tileJson.bounds;
+    const db = demTileJson.bounds;
+    if (ob && db) {
+      dynamicBounds = [
+        Math.max(ob[0], db[0]),
+        Math.max(ob[1], db[1]),
+        Math.min(ob[2], db[2]),
+        Math.min(ob[3], db[3])
+      ];
+    } else {
+      dynamicBounds = ob || db;
+    }
 
     // Read minzoom and maxzoom from TileJSON
     if (demTileJson.minzoom !== undefined) layerMinZoom = demTileJson.minzoom;
