@@ -38,7 +38,7 @@ function createTerrainLayer(exag, bounds, elevationData, texture, wireframe, min
     id: 'terrain-layer',
     elevationData: elevationData,
     texture: texture,
-    elevationDecoder: getElevationDecoder(exag*10),
+    elevationDecoder: getElevationDecoder(exag),
     bounds: bounds,
     extent: bounds,
     wireframe: wireframe,
