@@ -26,8 +26,10 @@ let deck;
 let dynamicBounds = null;
 let demTiles = null;
 let orthoTiles = null;
+let layerMinZoom = 0;
+let layerMaxZoom = 20;
 
-function createTerrainLayer(exag, bounds, elevationData, texture, wireframe) {
+function createTerrainLayer(exag, bounds, elevationData, texture, wireframe, minZoom, maxZoom) {
   // Since we normalized the base elevation to 0, the actual maximum vertical range
   // above the baseline is the difference between max and base.
   const elevationSpan = Math.max(0, maxElevation - baseElevation);
@@ -42,9 +44,11 @@ function createTerrainLayer(exag, bounds, elevationData, texture, wireframe) {
     meshMaxError: 10,
     color: [255, 255, 255],
     transparentColor: [0, 0, 0, 0],
+    minZoom: minZoom,
+    maxZoom: maxZoom,
     // Tell deck.gl's tile culling system exactly how high the mesh stretches above z=0.
     // This perfectly fits the normalized bounding box and stops tiles from disappearing.
-    zRange: [0, elevationSpan * exag * 10],
+    zRange: [0, elevationSpan * exag],
     loadOptions: {
       terrain: {
         skirtHeight: 1000 * exag
@@ -109,6 +113,10 @@ async function initViewer() {
     demTiles = [`${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${DEM_URL}`];
     dynamicBounds = tileJson.bounds;
 
+    // Read minzoom and maxzoom from TileJSON
+    if (demTileJson.minzoom !== undefined) layerMinZoom = demTileJson.minzoom;
+    if (demTileJson.maxzoom !== undefined) layerMaxZoom = demTileJson.maxzoom;
+
     let centerLon = -122.4;
     let centerLat = 37.75;
     let centerZoom = 11;
@@ -151,7 +159,7 @@ async function initViewer() {
         })
       ],
       layers: [
-        createTerrainLayer(exaggeration, dynamicBounds, demTiles, orthoTiles, isWireframe)
+        createTerrainLayer(exaggeration, dynamicBounds, demTiles, orthoTiles, isWireframe, layerMinZoom, layerMaxZoom)
       ]
     });
 
@@ -171,7 +179,7 @@ slider.addEventListener('input', (e) => {
 
   if (deck && dynamicBounds && demTiles && orthoTiles) {
     deck.setProps({
-      layers: [createTerrainLayer(exaggeration, dynamicBounds, demTiles, orthoTiles, isWireframe)]
+      layers: [createTerrainLayer(exaggeration, dynamicBounds, demTiles, orthoTiles, isWireframe, layerMinZoom, layerMaxZoom)]
     });
   }
 });
@@ -180,7 +188,7 @@ wireframeToggle.addEventListener('change', (e) => {
   isWireframe = e.target.checked;
   if (deck && dynamicBounds && demTiles && orthoTiles) {
     deck.setProps({
-      layers: [createTerrainLayer(exaggeration, dynamicBounds, demTiles, orthoTiles, isWireframe)]
+      layers: [createTerrainLayer(exaggeration, dynamicBounds, demTiles, orthoTiles, isWireframe, layerMinZoom, layerMaxZoom)]
     });
   }
 });
