@@ -9,7 +9,11 @@ const ORTHO_URL = '/app/data/ortho.tif';
 let exaggeration = 1.0;
 let isWireframe = false;
 let baseElevation = 0;
-let maxElevation = 20000;
+// We lower the default maxElevation fallback from 20000 to a more typical
+// value so that if stats fail to load, deck.gl's tile frustum culling
+// doesn't compute an absurdly massive bounding box and fetch hundreds
+// of out-of-view tiles at deep zoom levels.
+let maxElevation = 4000;
 
 function getElevationDecoder(exag) {
   return {
@@ -48,11 +52,12 @@ function createTerrainLayer(exag, bounds, elevationData, texture, wireframe, min
     minZoom: minZoom,
     maxZoom: maxZoom,
     // Tell deck.gl's tile culling system exactly how high the mesh stretches above z=0.
-    // This perfectly fits the normalized bounding box and stops tiles from disappearing.
+    // This perfectly fits the true normalized bounding box and stops tiles from disappearing
+    // without artificially expanding the frustum bounds to infinity.
     zRange: [0, elevationSpan * exag],
     loadOptions: {
       terrain: {
-        skirtHeight: 1000 * exag
+        skirtHeight: 100 * exag
       }
     },
     fetch: (url, context) => {
