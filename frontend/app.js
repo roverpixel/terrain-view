@@ -133,14 +133,14 @@ async function initViewer() {
     }
 
     // Read minzoom and maxzoom from TileJSON
-    if (demTileJson.minzoom !== undefined) layerMinZoom = demTileJson.minzoom;
-    if (demTileJson.maxzoom !== undefined) layerMaxZoom = demTileJson.maxzoom;
+    if (tileJson.minzoom !== undefined) layerMinZoom = tileJson.minzoom;
+    if (tileJson.maxzoom !== undefined) layerMaxZoom = tileJson.maxzoom;
 
     let centerLon = -122.4;
     let centerLat = 37.75;
     let centerZoom = 11;
-    let minZoom = -10;
-    let maxZoom = 20;
+    let minZoom = layerMinZoom !== undefined ? layerMinZoom : -10;
+    let maxZoom = layerMaxZoom !== undefined ? layerMaxZoom : 20;
 
     if (tileJson.center) {
       centerLon = tileJson.center[0];
