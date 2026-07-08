@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from titiler.core.factory import TilerFactory
 from titiler.core.errors import DEFAULT_STATUS_CODES, add_exception_handlers
@@ -8,7 +8,7 @@ import numpy as np
 import os
 os.environ["PROJ_IGNORE_CELESTIAL_BODY"] = "YES"
 
-app = FastAPI(title="Terrain-View Backend")
+app = FastAPI(title="Terrain-View Backend", root_path=os.getenv("ROOT_PATH", ""))
 
 # Ensure middleware handles CORS.
 app.add_middleware(
@@ -72,4 +72,4 @@ add_exception_handlers(app, DEFAULT_STATUS_CODES)
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, proxy_headers=True, forwarded_allow_ips="*")

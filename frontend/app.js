@@ -1,7 +1,6 @@
 import { Deck, MapView, Layer, AmbientLight, LightingEffect } from '@deck.gl/core';
 import { TerrainLayer } from '@deck.gl/geo-layers';
 
-// Use absolute paths for the data files to avoid any relative path resolution issues in backend
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://serverhost:8000';
 const DEM_URL = '/app/data/dem.tif';
 const ORTHO_URL = '/app/data/ortho.tif';
@@ -115,8 +114,8 @@ async function initViewer() {
       console.warn('Failed to fetch DEM statistics, falling back to defaults', demStatsResponse.statusText);
     }
 
-    orthoTiles = [`${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${ORTHO_URL}`];
-    demTiles = [`${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${DEM_URL}`];
+    orthoTiles = tileJson.tiles || [`${BACKEND_URL}/ortho/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${ORTHO_URL}`];
+    demTiles = demTileJson.tiles || [`${BACKEND_URL}/dem/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?url=${DEM_URL}`];
 
     // Calculate intersection of both datasets bounds [minX, minY, maxX, maxY]
     const ob = tileJson.bounds;
